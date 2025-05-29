@@ -6,8 +6,12 @@ import io
 
 app = FastAPI()
 
-model = BeitForImageClassification.from_pretrained("ALM-AHME/beit-large-patch16-224-finetuned-Lesion-Classification-HAM10000-AH-60-20-20")
-processor = BeitImageProcessor.from_pretrained("ALM-AHME/beit-large-patch16-224-finetuned-Lesion-Classification-HAM10000-AH-60-20-20")
+model = BeitForImageClassification.from_pretrained(
+    "ALM-AHME/beit-large-patch16-224-finetuned-Lesion-Classification-HAM10000-AH-60-20-20"
+)
+processor = BeitImageProcessor.from_pretrained(
+    "ALM-AHME/beit-large-patch16-224-finetuned-Lesion-Classification-HAM10000-AH-60-20-20"
+)
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
@@ -18,4 +22,22 @@ async def predict(file: UploadFile = File(...)):
     logits = outputs.logits
     predicted_class_idx = logits.argmax(-1).item()
     predicted_label = model.config.id2label[predicted_class_idx]
-    return {"diagnosis": predicted_label}
+
+    # Diccionario de descripciones
+    descripciones = {
+        "bcc": "Carcinoma basocelular: un tipo de cáncer de piel de crecimiento lento...",
+        "nv": "Nevus melanocítico: también conocido como lunar común...",
+        "mel": "Melanoma: tipo de cáncer de piel más grave...",
+        "akiec": "Queratosis actínica...",
+        "df": "Dermatofibroma...",
+        "vasc": "Lesión vascular...",
+        "bkl": "Léntigo solar...",
+    }
+
+    # Obtener descripción correspondiente
+    descripcion = descripciones.get(predicted_label.lower(), "Descripción no disponible.")
+
+    return {
+        "diagnosis": predicted_label,
+        "description": descripcion
+    }
